@@ -1,10 +1,15 @@
+import codecs
 import configparser
 import feedparser
 import re
 
+from subprocess import Popen
+
 config = configparser.ConfigParser();
-config.read('config.ini');
+config.read_file(codecs.open('config.ini', 'r', 'utf8'));
 feed_url = config['RSS'].get('rss_feed');
+client_path = config['Download'].get('client_path');
+dest_path = config['Download'].get('destination');
 
 data = feedparser.parse(feed_url);
 
@@ -20,14 +25,15 @@ def rss_filter(name, quality):
     result.append('.*');
 
     # Build quality part of regex,
-    if(isinstance(quality, list)):
-        result.append(quality.pop(0));
-        while(len(quality) > 0):
-            result.append('|');
+    if(quality is not None):
+        if(isinstance(quality, list)):
             result.append(quality.pop(0));
-    elif isinstance(quality, str):
-        result.append(quality);
-    result.append('.*');
+            while(len(quality) > 0):
+                result.append('|');
+                result.append(quality.pop(0));
+        elif isinstance(quality, str):
+            result.append(quality);
+        result.append('.*');
 
     # Join all list elements and return the string
     return ''.join(result);
@@ -51,15 +57,25 @@ def show_info(dirname):
 
     return [showName, season, episode]
 
-def main():
-    filt = rss_filter('Chicago Fire', '720p');
+def init_download(info, url):
+    print('Downloading', info);
+
+    check_if_exists(info);
+
+    #Popen([client_path, '/DIRECTORY', dest_path, url]);
+
+def check_if_exists(info):
+    # TODO: implement, search destination folder for given info
+    return;
+    
+if __name__ == '__main__':
+    filt = rss_filter('Chicago Fire', None);
     matches = {};
     for entry in data.entries:
         #print(entry.title);
         if(re.match(filt, entry.title) is not None):
-           info = show_info(entry.title);
-           print(info);
+            print(entry.title)
+            info = show_info(entry.title);
+            init_download(info, entry.link)
 
     print(filt);
-
-main();
