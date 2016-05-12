@@ -39,7 +39,6 @@ def rss_filter(name, quality):
     return ''.join(result);
 
 def show_info(dirname):
-
     showName = re.split('S\d+E\d+|\d{3,4}', dirname, re.IGNORECASE)[0]
     showName = showName.replace('.', ' ').strip()
 
@@ -48,14 +47,14 @@ def show_info(dirname):
 
     if(res1 is not None):
         SE = res1.group().split('S')[1].split('E')
-        season = SE[0]
-        episode = SE[1]
+        season = int(SE[0])
+        episode = int(SE[1])
     elif(res2 is not None):
         se = res2.group()
         season = math.floor(int(se)/100)
         episode = int(se) % 100
 
-    return [showName, season, episode]
+    return {'name': showName, 'season': season, 'episode': episode}
 
 def init_download(info, url):
     print('Downloading', info);
@@ -67,15 +66,26 @@ def init_download(info, url):
 def check_if_exists(info):
     # TODO: implement, search destination folder for given info
     return;
+
+def contains_episode(matched_list, info):
+    new_subdict = {k: info[k] for k in ('name', 'episode', 'season')};
+    for entry in matched_list:
+        current_subdict = {k: entry[k] for k in ('name', 'episode', 'season')};
+        if(new_subdict == current_subdict):
+            return True;
+
+    return False;
     
 if __name__ == '__main__':
-    filt = rss_filter('Chicago Fire', None);
-    matches = {};
+    filt = rss_filter('family feud nz', None);
+    matches = [];
     for entry in data.entries:
         #print(entry.title);
-        if(re.match(filt, entry.title) is not None):
-            print(entry.title)
+        if(re.search(filt, entry.title, re.IGNORECASE) is not None):
             info = show_info(entry.title);
-            init_download(info, entry.link)
+            if(not contains_episode(matches, info)):
+                info['link'] = entry.link;
+                matches.append(info);
 
-    print(filt);
+    print(matches);
+    #print(filt);
