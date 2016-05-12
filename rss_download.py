@@ -67,11 +67,6 @@ def rss_filter(name, quality):
 # from a given string, will raise exception if string
 # can't be decoded properly
 def show_info(input_str):
-    # Extract show name
-    # TODO: try to do it more generally with regex
-    showName = re.split('S\d+E\d+|\d{3,4}', input_str, re.IGNORECASE)[0];
-    showName = showName.replace('.', ' ').strip();
-
     # Extract season and episode number
     # Currently searches for S01E01 format or 0101 format
     reg_se1 = re.compile('s(\d\d)e(\d\d)', re.IGNORECASE);
@@ -80,25 +75,36 @@ def show_info(input_str):
     res_se2 = reg_se2.search(input_str);
 
     if(res_se1 is None and res_se2 is None):
-        raise Exception('Input format invalid');
+        raise ValueError('Input format invalid');
     elif(res_se2 is None):
         season = int(res_se1.group(1));
         episode = int(res_se1.group(2));
+        reg_split = reg_se1;
     elif(res_se1 is None):
-        se = res2.group(1);
+        se = res_se2.group(1);
         season = math.floor(int(se)/100);
         episode = int(se) % 100;
+        reg_split = reg_se2;
 
-    return {'name': showName, 'season': season, 'episode': episode}
+    # Extract show name
+    # TODO: try to do it more generally with regex
+    #first_part = re.split('S\d\dE\d\d|\d{3,4}', input_str, re.IGNORECASE);
+    first_part = reg_split.split(input_str)[0];
+    words = re.findall('[\.\s]*(\w+)[\.\s]*', first_part);
+    name = ' '.join(words).title();
 
-def init_download(info, url):
-    print('Downloading', info);
+    return {'name': name, 'season': season, 'episode': episode}
 
-    check_if_exists(info);
+def batch_download(matched_list):
+    for entry in matched_list:
+        if(not exists(entry)):
+            init_download(url);
 
+def init_download(url):
+    print('Downloading from:', url);
     #Popen([client_path, '/DIRECTORY', dest_path, url]);
 
-def check_if_exists(info):
+def exists(info):
     # TODO: implement, search destination folder for given info
     return;
 
@@ -128,7 +134,9 @@ def update():
                 except:
                     print('Invalid shit')
 
-    print('Result:', matches);
+    #print('Result:', matches);
+    for match in matches:
+        print(match['name'], 's' + str(match['season']), 'e' + str(match['episode']))
 
 if __name__ == '__main__':
     init();
