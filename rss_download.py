@@ -11,7 +11,8 @@ feed_url = config['RSS'].get('rss_feed');
 client_path = config['Download'].get('client_path');
 dest_path = config['Download'].get('destination');
 
-data = feedparser.parse(feed_url);
+matches = [];
+filters = [];
 
 def rss_filter(name, quality):
     words = re.findall('\w+', name)
@@ -75,17 +76,22 @@ def contains_episode(matched_list, info):
             return True;
 
     return False;
-    
-if __name__ == '__main__':
-    filt = rss_filter('family feud nz', None);
-    matches = [];
+
+def update():
+    print('Updating...');
+    data = feedparser.parse(feed_url);
+    filters.append(rss_filter('family feud nz', None));
+
     for entry in data.entries:
         #print(entry.title);
-        if(re.search(filt, entry.title, re.IGNORECASE) is not None):
-            info = show_info(entry.title);
-            if(not contains_episode(matches, info)):
-                info['link'] = entry.link;
-                matches.append(info);
+        for filt in filters:
+            if(re.search(filt, entry.title, re.IGNORECASE) is not None):
+                info = show_info(entry.title);
+                if(not contains_episode(matches, info)):
+                    info['link'] = entry.link;
+                    matches.append(info);
 
-    print(matches);
-    #print(filt);
+    print('Result:', matches);
+
+if __name__ == '__main__':
+    update();
