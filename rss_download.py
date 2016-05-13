@@ -126,22 +126,29 @@ def contains_episode(matched_list, info):
 
     return False;
 
+def filter_data(entries, filters):
+    result = [];
+
+    if(entries is not None and filters is not None):
+        for entry in entries:
+            #print(entry['title']);
+            for filt in filters:
+                if(re.search(filt, entry['title'], re.IGNORECASE) is not None):
+                    try:
+                        info = show_info(entry['title']);
+                        if(not contains_episode(result, info)):
+                            info['link'] = entry['link'];
+                            result.append(info);
+                    except Error as e:
+                        print('Error:', e.strerror);
+
+    return result;
+
 # Read and filter feed
 def update():
     print('Updating...');
     data = feedparser.parse(feed_url);
-
-    for entry in data.entries:
-        #print(entry.title);
-        for filt in filters:
-            if(re.search(filt, entry.title, re.IGNORECASE) is not None):
-                try:
-                    info = show_info(entry.title);
-                    if(not contains_episode(matches, info)):
-                        info['link'] = entry.link;
-                        matches.append(info);
-                except Error as e:
-                    print('Error:', e.strerror);
+    matches = filter_data(data.entries, filters);
 
     #print('Result:', matches);
     for match in matches:
