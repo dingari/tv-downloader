@@ -75,7 +75,7 @@ def show_info(input_str):
     res_se2 = reg_se2.search(input_str);
 
     if(res_se1 is None and res_se2 is None):
-        raise ValueError('Input format invalid');
+        raise ValueError('No season/episode info found');
     elif(res_se2 is None):
         season = int(res_se1.group(1));
         episode = int(res_se1.group(2));
@@ -90,6 +90,8 @@ def show_info(input_str):
     # TODO: try to do it more generally with regex
     #first_part = re.split('S\d\dE\d\d|\d{3,4}', input_str, re.IGNORECASE);
     first_part = reg_split.split(input_str)[0];
+    if(first_part is ''):
+        raise ValueError('No title found');
     words = re.findall('[\.\s]*(\w+)[\.\s]*', first_part);
     name = ' '.join(words).title();
 
@@ -108,8 +110,12 @@ def exists(info):
     # TODO: implement, search destination folder for given info
     return;
 
+# Throws:
+#   TypeError
+#   KeyError
 def contains_episode(matched_list, info):
     new_subdict = {k: info[k] for k in ('name', 'episode', 'season')};
+    new_subdict['name'] = new_subdict['name'].title();
     for entry in matched_list:
         current_subdict = {k: entry[k] for k in ('name', 'episode', 'season')};
         if(new_subdict == current_subdict):
