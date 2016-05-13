@@ -39,8 +39,11 @@ def init():
         filters.append(rss_filter(name, quality));
 
 def rss_filter(name, quality):
-    words = re.findall('\w+', name)
-    result = []
+    if(name is None):
+        raise ValueError('Must provide name');
+
+    words = re.findall('\w+', name.lower());
+    result = [];
     result.append(words.pop(0));
 
     # Build title part of regex
@@ -55,9 +58,9 @@ def rss_filter(name, quality):
             result.append(quality.pop(0));
             while(len(quality) > 0):
                 result.append('|');
-                result.append(quality.pop(0));
+                result.append(quality.pop(0).lower());
         elif isinstance(quality, str):
-            result.append(quality);
+            result.append(quality.lower());
         result.append('.*');
 
     # Join all list elements and return the string
@@ -137,8 +140,8 @@ def update():
                     if(not contains_episode(matches, info)):
                         info['link'] = entry.link;
                         matches.append(info);
-                except:
-                    print('Invalid shit')
+                except Error as e:
+                    print('Error:', e.strerror);
 
     #print('Result:', matches);
     for match in matches:

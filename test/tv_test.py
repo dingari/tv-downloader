@@ -110,6 +110,27 @@ class ContainsEpisodeTest(unittest.TestCase):
 	def tearDown(self):
 		self.matched_list = None;
 
+class rssFilterTest(unittest.TestCase):
+	
+	def test_filter_uppercase(self):
+		filt = ut.rss_filter('New Girl', '720P');
+		expect = 'new[\s_\.]?girl.*720p.*';
+		self.assertEqual(filt, expect);
+
+	def test_filter_lowercase(self):
+		filt = ut.rss_filter('new girl', '720p');
+		expect = 'new[\s_\.]?girl.*720p.*';
+		self.assertEqual(filt, expect);
+
+	def test_filter_no_quality(self):
+		filt = ut.rss_filter('new girl', None);
+		expect = 'new[\s_\.]?girl.*';
+		self.assertEqual(filt, expect);
+
+	def test_filter_no_name(self):
+		with self.assertRaises(ValueError):
+			filt = ut.rss_filter(None, '720p');
+
 
 if __name__ == '__main__':
 	unittest.main();
