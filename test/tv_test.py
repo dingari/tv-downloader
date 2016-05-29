@@ -1,4 +1,6 @@
 import unittest
+
+import os
 import rss_download as ut
 
 class ShowInfoTest(unittest.TestCase):
@@ -192,6 +194,38 @@ class filterDataTest(unittest.TestCase):
 
 	def tearDown(self):
 		self.entries = None;
+
+
+class ExistsTest(unittest.TestCase):
+	def setUp(self):
+		self.root_dir = os.join(os.getcwd(), 'test', 'root');
+		self.info = {
+			'name': 'New Girl',
+			'season': 4,
+			'episode': 15
+		}
+
+	def test_exists_root(self):
+		self.path = os.path.join(self.root_dir, 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
+		open(self.path, 'w+');
+		self.assertTrue(ut.exists(self.root_dir, self.info));
+
+	def test_exists_subdir(self):
+		self.path = os.path.join(self.root_dir, 'sub', 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
+		open(self.path, 'w+');
+		self.assertTrue(ut.exists(self.root_dir, self.info));
+
+	def test_exists_not_root(self):
+		self.assertFalse(ut.exists(self.root_dir, self.info));
+
+	def test_exists_not_subdir(self):
+		self.path = os.path.join(self.root_dir, 'sub', 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
+		self.assertFalse(ut.exists(self.path, self.info));
+
+	def tearDown(self):
+		if(os.path.exists(self.path)):
+			os.remove(self.path);
+		os.removedirs(self.root_dir);
 
 
 if __name__ == '__main__':

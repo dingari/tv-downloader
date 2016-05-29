@@ -102,14 +102,14 @@ def show_info(input_str):
 
 def batch_download(matched_list):
     for entry in matched_list:
-        if(not exists(entry)):
+        if(not show_exists(entry)):
             init_download(url);
 
 def init_download(url):
     print('Downloading from:', url);
     #Popen([client_path, '/DIRECTORY', dest_path, url]);
 
-def exists(info):
+def show_exists(root_dir, info):
     # TODO: implement, search destination folder for given info
     return;
 
