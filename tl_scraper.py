@@ -13,7 +13,7 @@ host = 'https://torrentleech.org';
 login_url = host + '/user/account/login';
 browse_url = host + '/torrents/browse';
 
-def login(username, password, login_url):
+def login(username=username, password=password, login_url=login_url):
 	data = {
 		'username': username,
 		'password': password
@@ -24,7 +24,7 @@ def login(username, password, login_url):
 	session.post(login_url, data = data);
 	return session;
 
-def scrape_torrents(session):
+def scrape_torrents(session=login()):
 	res = session.get(browse_url);
 	soup = BeautifulSoup(res.text, 'html.parser');
 
@@ -45,6 +45,7 @@ def scrape_torrents(session):
 			});
 
 	return results;
+
 
 if __name__ == '__main__':
 	session = login(username, password, login_url);
