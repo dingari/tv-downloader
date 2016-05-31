@@ -112,29 +112,29 @@ class ContainsEpisodeTest(unittest.TestCase):
 	def tearDown(self):
 		self.matched_list = None;
 
-class rssFilterTest(unittest.TestCase):
+class RssFilterTest(unittest.TestCase):
 	
 	def test_filter_uppercase(self):
-		filt = ut.rss_filter('New Girl', '720P');
+		filt = ut.rss_filter('New Girl', quality='720P');
 		expect = 'new[\s_\.]?girl.*720p.*';
 		self.assertEqual(filt, expect);
 
 	def test_filter_lowercase(self):
-		filt = ut.rss_filter('new girl', '720p');
+		filt = ut.rss_filter('new girl', quality='720p');
 		expect = 'new[\s_\.]?girl.*720p.*';
 		self.assertEqual(filt, expect);
 
 	def test_filter_no_quality(self):
-		filt = ut.rss_filter('new girl', None);
+		filt = ut.rss_filter('new girl');
 		expect = 'new[\s_\.]?girl.*';
 		self.assertEqual(filt, expect);
 
 	def test_filter_no_name(self):
 		with self.assertRaises(ValueError):
-			filt = ut.rss_filter(None, '720p');
+			filt = ut.rss_filter(None, quality='720p');
 
 
-class filterDataTest(unittest.TestCase):
+class FilterDataTest(unittest.TestCase):
 
 	def setUp(self):
 		self.entries = [
@@ -153,29 +153,29 @@ class filterDataTest(unittest.TestCase):
 		];
 
 	def test_filter_no_quality_found(self):
-		filters = [ut.rss_filter('Supernatural', None)];
+		filters = [ut.rss_filter('Supernatural')];
 		matches = ut.filter_data(self.entries, filters);
 		expect = [{'name': 'Supernatural', 'season': 11, 'episode': 21, 'link': ''}];
 		self.assertEqual(matches, expect);
 
 	def test_filter_no_quality_not_found(self):
-		filters = [ut.rss_filter('sex and the city', None)];
+		filters = [ut.rss_filter('sex and the city')];
 		matches = ut.filter_data(self.entries, filters);
 		self.assertEqual(matches, []);
 
 	def test_filter_quality_found(self):
-		filters = [ut.rss_filter('Supernatural', '720p')];
+		filters = [ut.rss_filter('Supernatural', quality='720p')];
 		matches = ut.filter_data(self.entries, filters);
 		expect = [{'name': 'Supernatural', 'season': 11, 'episode': 21, 'link': ''}];
 		self.assertEqual(matches, expect);
 
 	def test_filter_quality_not_found(self):
-		filters = [ut.rss_filter('Supernatural', '1080p')];
+		filters = [ut.rss_filter('Supernatural', quality='1080p')];
 		matches = ut.filter_data(self.entries, filters);
 		self.assertEqual(matches, []);
 
 	def test_filter_entries_none(self):
-		filters = [ut.rss_filter('Supernatural', '720p')];
+		filters = [ut.rss_filter('Supernatural', quality='720p')];
 		result = ut.filter_data(None, filters);
 		self.assertEqual(result, []);
 
@@ -184,7 +184,7 @@ class filterDataTest(unittest.TestCase):
 		self.assertEqual(result, []);
 
 	def test_filter_entries_empty(self):
-		filters = [ut.rss_filter('Supernatural', '720p')];
+		filters = [ut.rss_filter('Supernatural', quality='720p')];
 		result = ut.filter_data([], filters);
 		self.assertEqual(result, []);
 
@@ -195,10 +195,10 @@ class filterDataTest(unittest.TestCase):
 	def tearDown(self):
 		self.entries = None;
 
-
+'''
 class ExistsTest(unittest.TestCase):
 	def setUp(self):
-		self.root_dir = os.join(os.getcwd(), 'test', 'root');
+		self.root_dir = os.path.join(os.getcwd(), 'test', 'root');
 		self.info = {
 			'name': 'New Girl',
 			'season': 4,
@@ -208,25 +208,26 @@ class ExistsTest(unittest.TestCase):
 	def test_exists_root(self):
 		self.path = os.path.join(self.root_dir, 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
 		open(self.path, 'w+');
-		self.assertTrue(ut.exists(self.root_dir, self.info));
+		self.assertTrue(ut.tvshow_exists(self.root_dir, self.info));
 
 	def test_exists_subdir(self):
 		self.path = os.path.join(self.root_dir, 'sub', 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
 		open(self.path, 'w+');
-		self.assertTrue(ut.exists(self.root_dir, self.info));
+		self.assertTrue(ut.tvshow_exists(self.root_dir, self.info));
 
 	def test_exists_not_root(self):
-		self.assertFalse(ut.exists(self.root_dir, self.info));
+		self.path = self.root_dir;
+		self.assertFalse(ut.tvshow_exists(self.root_dir, self.info));
 
 	def test_exists_not_subdir(self):
 		self.path = os.path.join(self.root_dir, 'sub', 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
-		self.assertFalse(ut.exists(self.path, self.info));
+		self.assertFalse(ut.tvshow_exists(self.root_dir, self.info));
 
 	def tearDown(self):
 		if(os.path.exists(self.path)):
 			os.remove(self.path);
 		os.removedirs(self.root_dir);
-
+'''
 
 if __name__ == '__main__':
 	unittest.main();

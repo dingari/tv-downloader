@@ -2,9 +2,11 @@ import codecs
 import configparser
 import feedparser
 import math
+import os
 import re
 
 from subprocess import Popen
+from tl_scraper import scrape_torrents
 
 # Globals
 feed_url = '';
@@ -36,9 +38,17 @@ def init():
         filt = [];
         name = config[section].get('name');
         quality = config[section].get('quality');
-        filters.append(rss_filter(name, quality));
+        filters.append(rss_filter(name, quality=quality));
 
-def rss_filter(name, quality):
+def rss_filter(name, **kwargs):
+    season = episode = quality = None;
+    if('season' in kwargs):
+        season = kwargs['season'];
+    if('episode' in kwargs):
+        episode = kwargs['episode'];
+    if('quality' in kwargs):
+        quality = kwargs['quality'];
+
     if(name is None):
         raise ValueError('Must provide name');
 
@@ -51,6 +61,19 @@ def rss_filter(name, quality):
         result.append('[\s_\.]?');
         result.append(words.pop(0));
     result.append('.*');
+
+    # Build season/episode part of regex
+    if(season is not None):
+        season_str = str(season).zfill(2);
+        if(episode is not None):
+            episode_str = str(episode).zfill(2);
+            numeric_str = str(season*100 + episode);
+        else:
+            episode_str = '\d\d';
+            numeric_str = str(season) + '\d\d';
+
+        result.append('((s{}e{})|{}'.format(season_str, episode_str, numeric_str));
+        result.append('.*');
 
     # Build quality part of regex,
     if(quality is not None):
@@ -102,16 +125,26 @@ def show_info(input_str):
 
 def batch_download(matched_list):
     for entry in matched_list:
-        if(not show_exists(entry)):
+        if(not tvshow_exists(entry)):
             init_download(url);
 
 def init_download(url):
     print('Downloading from:', url);
     #Popen([client_path, '/DIRECTORY', dest_path, url]);
 
-def show_exists(root_dir, info):
-    # TODO: implement, search destination folder for given info
-    return;
+def tvshow_exists(root_dir, info):
+    # TODO: Not fully implemented
+    filt = rss_filter(info['name'], None);
+
+    name = info['name']
+    season = 'Season ' + str(info['season'])
+    path = os.path.join(root_dir, name, season);
+
+    for filename in os.listdir(path):
+        if(re.search(filt, filename, re.IGNORECASE) is not None):
+            return True;
+
+    print(files);
 
 # Throws:
 #   TypeError
