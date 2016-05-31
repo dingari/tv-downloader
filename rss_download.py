@@ -27,7 +27,8 @@ def init():
     config.read_file(codecs.open('config.ini', 'r', 'utf8'));
     feed_url = config['RSS'].get('rss_feed');
     client_path = config['Download'].get('client_path');
-    dest_path = config['Download'].get('destination');
+    download_path = config['Download'].get('download_path');
+    extract_path = config['Download'].get('extract_path');
 
     # Read filter config file
     config = configparser.ConfigParser();
@@ -40,15 +41,7 @@ def init():
         quality = config[section].get('quality');
         filters.append(rss_filter(name, quality=quality));
 
-def rss_filter(name, **kwargs):
-    season = episode = quality = None;
-    if('season' in kwargs):
-        season = kwargs['season'];
-    if('episode' in kwargs):
-        episode = kwargs['episode'];
-    if('quality' in kwargs):
-        quality = kwargs['quality'];
-
+def rss_filter(name, season=None, episode=None, quality=None):
     if(name is None):
         raise ValueError('Must provide name');
 
@@ -72,7 +65,7 @@ def rss_filter(name, **kwargs):
             episode_str = '\d\d';
             numeric_str = str(season) + '\d\d';
 
-        result.append('((s{}e{})|{}'.format(season_str, episode_str, numeric_str));
+        result.append('((s{}e{})|{})'.format(season_str, episode_str, numeric_str));
         result.append('.*');
 
     # Build quality part of regex,
@@ -132,19 +125,35 @@ def init_download(url):
     print('Downloading from:', url);
     #Popen([client_path, '/DIRECTORY', dest_path, url]);
 
-def tvshow_exists(root_dir, info):
-    # TODO: Not fully implemented
-    filt = rss_filter(info['name'], None);
+def is_tvshow_extracted(info):
+    name = info['name'];
+    season = info['season'];
+    episode = info['episode'];
+    
+    path = os.path.join(extract_path, name, str(info['season']));
 
-    name = info['name']
-    season = 'Season ' + str(info['season'])
-    path = os.path.join(root_dir, name, season);
+    tvshow_search(path, name=name, season=season, episode=episode);
 
-    for filename in os.listdir(path):
-        if(re.search(filt, filename, re.IGNORECASE) is not None):
-            return True;
+def is_tvshow_downloaded(info):
+    name = info['name'];
+    season = info['season'];
+    episode = info['episode'];
+    
+    path = download_path;
 
-    print(files);
+    tvshow_search(path, name=name, season=season, episode=episode);
+
+def tvshow_search(path, name=None, season=None, episode=None, quality=None):
+    filt = rss_filter(name, season=season, episode=episode);
+
+    try:
+        for filename in os.listdir(path):
+            if(re.search(filt, filename, re.IGNORECASE) is not None):
+                return True;
+    except:
+        print('Illegal path');
+
+    return False;
 
 # Throws:
 #   TypeError

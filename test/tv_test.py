@@ -195,39 +195,30 @@ class FilterDataTest(unittest.TestCase):
 	def tearDown(self):
 		self.entries = None;
 
-'''
-class ExistsTest(unittest.TestCase):
+class SearchTest(unittest.TestCase):
 	def setUp(self):
 		self.root_dir = os.path.join(os.getcwd(), 'test', 'root');
-		self.info = {
-			'name': 'New Girl',
-			'season': 4,
-			'episode': 15
-		}
 
-	def test_exists_root(self):
+		self.name = 'New Girl';
+		self.season = 4;
+		self.episode = 15;
+
+	def test_search_found(self):
 		self.path = os.path.join(self.root_dir, 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
+		os.mkdir(self.root_dir);
 		open(self.path, 'w+');
-		self.assertTrue(ut.tvshow_exists(self.root_dir, self.info));
+		self.assertTrue(ut.tvshow_search(self.root_dir, name=self.name, season=self.season, episode=self.episode));
 
-	def test_exists_subdir(self):
-		self.path = os.path.join(self.root_dir, 'sub', 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
-		open(self.path, 'w+');
-		self.assertTrue(ut.tvshow_exists(self.root_dir, self.info));
-
-	def test_exists_not_root(self):
+	def test_search_not_found(self):
 		self.path = self.root_dir;
-		self.assertFalse(ut.tvshow_exists(self.root_dir, self.info));
+		os.mkdir(self.root_dir);
 
-	def test_exists_not_subdir(self):
-		self.path = os.path.join(self.root_dir, 'sub', 'new.girl.s04e15.720p.hdtv.asdf.fdsa');
-		self.assertFalse(ut.tvshow_exists(self.root_dir, self.info));
+		self.assertFalse(ut.tvshow_search(self.root_dir, name=self.name, season=self.season, episode=self.episode));
 
 	def tearDown(self):
-		if(os.path.exists(self.path)):
+		if(os.path.exists(self.path) and os.path.isfile(self.path)):
 			os.remove(self.path);
 		os.removedirs(self.root_dir);
-'''
 
 if __name__ == '__main__':
 	unittest.main();
