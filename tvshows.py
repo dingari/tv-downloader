@@ -48,7 +48,7 @@ def make_filter(name, season=None, episode=None, quality=None):
 # can't be decoded properly
 def get_info(input_str):
     # Extract season and episode number
-    # Currently searches for S01E01 format or 0101 format
+    # Currently searches for S01E01 format or 101 format
     reg_se1 = re.compile('s(\d\d)e(\d\d)', re.IGNORECASE);
     reg_se2 = re.compile('[\.\s](\d{3,4})[\.\s]');
     res_se1 = reg_se1.search(input_str);
@@ -68,7 +68,6 @@ def get_info(input_str):
 
     # Extract show name
     # TODO: try to do it more generally with regex
-    #first_part = re.split('S\d\dE\d\d|\d{3,4}', input_str, re.IGNORECASE);
     first_part = reg_split.split(input_str)[0];
     if(first_part is ''):
         raise ValueError('No title found');
@@ -77,23 +76,23 @@ def get_info(input_str):
 
     return {'name': name, 'season': season, 'episode': episode}
 
-def is_extracted(info):
+def is_extracted(extract_path, info):
     name = info['name'];
     season = info['season'];
     episode = info['episode'];
     
-    path = os.path.join(extract_path, name, str(info['season']));
+    path = os.path.join(extract_path, name, 'Season ' + str(info['season']));
 
-    search(path, name=name, season=season, episode=episode);
+    return search(path, name=name, season=season, episode=episode);
 
-def is_downloaded(info):
+def is_downloaded(download_path, info):
     name = info['name'];
     season = info['season'];
     episode = info['episode'];
     
     path = download_path;
 
-    search(path, name=name, season=season, episode=episode);
+    return search(path, name=name, season=season, episode=episode);
 
 def search(path, name=None, season=None, episode=None, quality=None):
     filt = make_filter(name, season=season, episode=episode);
@@ -103,7 +102,7 @@ def search(path, name=None, season=None, episode=None, quality=None):
             if(re.search(filt, filename, re.IGNORECASE) is not None):
                 return True;
     except Exception as e:
-        print('Error: {}'.format(e));
+        return False;
 
     return False;
 
