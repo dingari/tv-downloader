@@ -11,7 +11,7 @@ password = config['Credentials'].get('password');
 
 host = 'https://torrentleech.org';
 login_url = host + '/user/account/login';
-browse_url = host + '/torrents/browse';
+browse_url = host + '/torrents/browse/index/facets/category%253ATV';
 
 def login(username=username, password=password, login_url=login_url):
 	data = {
