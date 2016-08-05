@@ -1,3 +1,4 @@
 config.ini
 filters.ini
 *pycache*
+*.sublime*
