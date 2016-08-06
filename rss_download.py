@@ -25,9 +25,11 @@ filters = [];
 
 RSS_INTERVAL = 1 * 60 * 60;
 SCRAPE_INTERVAL = 6 * 60 * 60;
+EXTRACT_INTERVAL = 1 * 60 * 60;
 
 last_rss_update = 0;
 last_scrape = 0;
+last_batch_extract = 0;
 
 def init():
     print('init')
@@ -66,7 +68,7 @@ def init():
 
 def init_download(url):
     print('Downloading from:', url);
-    # Popen([client_path, '/DIRECTORY', download_folder, url]);
+    Popen([client_path, '/DIRECTORY', download_folder, url]);
 
 def batch_download(matched_list):
     for entry in matched_list:
@@ -159,25 +161,29 @@ def filter_data(entries, filters):
 if __name__ == '__main__':
     init();
 
-    batch_extract();
+    while(True):
+        print("looping");
+        now = time.time();
 
-    # while(True):
-    #     print("looping");
+        if(now - last_rss_update > RSS_INTERVAL):
+            print('Updating...');
+            data = feedparser.parse(feed_url);
+            last_rss_update = time.time();
 
-    #     now = time.time();
-    #     if(now - last_rss_update > RSS_INTERVAL):
-    #         print('Updating...');
-    #         data = feedparser.parse(feed_url);
-    #         last_rss_update = time.time();
+        if(now - last_scrape > SCRAPE_INTERVAL):
+            print('Scraping...');
+            data.entries.extend(scrape_torrents());
+            last_scrape = time.time();
 
-    #         if(now - last_scrape > SCRAPE_INTERVAL):
-    #             print('Scraping...');
-    #             data.entries.extend(scrape_torrents());
-    #             last_scrape = time.time();
+        matches = filter_data(data.entries, filters);
+        batch_download(matches);
 
-    #     matches = filter_data(data.entries, filters);
+        if(now - last_batch_extract):
+            print('Performing batch extract...');
+            batch_extract();
+            last_batch_extract = time.time();
 
-    #     sleep_interval = min(RSS_INTERVAL, SCRAPE_INTERVAL);
-    #     print('Sleeping for', sleep_interval, 'seconds');
-    #     time.sleep(sleep_interval);
+        sleep_interval = min(RSS_INTERVAL, SCRAPE_INTERVAL, EXTRACT_INTERVAL);
+        print('Sleeping for', sleep_interval, 'seconds');
+        time.sleep(sleep_interval); 
 
