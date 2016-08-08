@@ -1,6 +1,19 @@
+import json
 import math
 import os
 import re
+import requests
+import urllib.parse as urlparse
+
+API_URL = 'https://api.thetvdb.com';
+
+api_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzA2OTI4NjgsImlkIjoidHYtZG93bmxvYWRlciIsIm9yaWdfaWF0IjoxNDcwNjA2NDY4LCJ1c2VyaWQiOjQ2MjU5MSwidXNlcm5hbWUiOiJkaW5nYXJpIn0.WeZL-xniYnnKMptfryWoP-4Kg6eY5jB6L8K6rMN-sMva7DYDMKDyQ8gL8_hSwdAAISacnC1IUQ5Lg_exTQ1tl_3BfI2_VTnnl305lR9O4LLBFmLSqWEPHHoSFdNsRd4Puq64ntRGhkU91qDkEP4c_2Ar2HQVlgKY96fYc2WLZcBTIfjlG-a9grnjNnadnixEX6zHHRj9ezjU4dxH9vKiUi3HO0MdUJL3_SCeM-rPPhDtg_q9C7SIRQF8YU1WkSkpTPSIcMjIKbyKW38J_gS8Xl216xj4f-E-9YoTlz4Li_RLmLkfa3UFHFOP93wXYIvzmTRTUR-YYwSKI73BED3Qkg';
+
+api_headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Authorization': 'Bearer ' + api_token
+};
 
 def make_filter(name, season=None, episode=None, quality=None):
     if(name is None):
@@ -118,3 +131,31 @@ def is_contained(matched_list, info):
             return True;
 
     return False;
+
+def update_api_token(token):
+    api_headers['Authorization'] = 'Bearer ' + token;
+
+# TODO: handle error instances (no results, multiple results)
+def get_episode_name(info):
+    # Get series id
+    query_string = urlparse.urlencode({'name': info['name']});
+    req_url = API_URL + '/search/series?' + query_string;
+    res = requests.get(req_url, headers=api_headers);
+
+    json_data = json.loads(res.text).get('data');
+
+    index_matches = (i for i, d in enumerate(json_data) if json_data[i].get('seriesName').lower() == info['name'].lower());
+    series_id = json_data[next(index_matches)].get('id');
+
+    # Use series id to get the episode name
+    query_string = urlparse.urlencode({
+        'airedSeason': info.get('season'),
+        'airedEpisode': info.get('episode')
+        });
+    req_url = API_URL + '/series/' + str(series_id) + '/episodes/query?' + query_string;
+    res = requests.get(req_url, headers=api_headers);
+
+    json_data = json.loads(res.text).get('data');
+    episode_name = json_data[0].get('episodeName');
+
+    return episode_name;
