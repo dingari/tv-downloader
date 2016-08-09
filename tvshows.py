@@ -5,9 +5,11 @@ import re
 import requests
 import urllib.parse as urlparse
 
+from http.client import HTTPException
+
 API_URL = 'https://api.thetvdb.com';
 
-api_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzA2OTI4NjgsImlkIjoidHYtZG93bmxvYWRlciIsIm9yaWdfaWF0IjoxNDcwNjA2NDY4LCJ1c2VyaWQiOjQ2MjU5MSwidXNlcm5hbWUiOiJkaW5nYXJpIn0.WeZL-xniYnnKMptfryWoP-4Kg6eY5jB6L8K6rMN-sMva7DYDMKDyQ8gL8_hSwdAAISacnC1IUQ5Lg_exTQ1tl_3BfI2_VTnnl305lR9O4LLBFmLSqWEPHHoSFdNsRd4Puq64ntRGhkU91qDkEP4c_2Ar2HQVlgKY96fYc2WLZcBTIfjlG-a9grnjNnadnixEX6zHHRj9ezjU4dxH9vKiUi3HO0MdUJL3_SCeM-rPPhDtg_q9C7SIRQF8YU1WkSkpTPSIcMjIKbyKW38J_gS8Xl216xj4f-E-9YoTlz4Li_RLmLkfa3UFHFOP93wXYIvzmTRTUR-YYwSKI73BED3Qkg';
+api_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzA4MTYwMTksImlkIjoidHYtZG93bmxvYWRlciIsIm9yaWdfaWF0IjoxNDcwNzI5NjE5LCJ1c2VyaWQiOjQ2MjU5MSwidXNlcm5hbWUiOiJkaW5nYXJpIn0.3JSuzkrut8ayMj2gmgd05kf-OwJmwMi_S1ydhWEYdZ9s7yrcKon-iBvhYjCMx3EOwU5BRfQovSBLy-W5pFUmyXRh4R_y-cLcha-UwJRgg-OHYLquYaN98Em1kYiRz6Yq8__80oo-XNYhEYREcbIy2M76zIoNxmPBwionuFy5romhGVh0WNtbOwQtu-n2bcAQ2qePTYf0saI9h7cYwEN3yPVE40W-jBe1b36xPvuW0hjDU-w1dIpQtiUa4iFJ5SIY3PH3MerffcDeGJSBCKWy_4bwqUxscmAR54yt010kmOYHND9nZKPt7s39ba7oUNyBX-UX1kfQNf2fwnmcj45WnA';
 
 api_headers = {
     'Content-Type': 'application/json',
@@ -132,8 +134,16 @@ def is_contained(matched_list, info):
 
     return False;
 
-def update_api_token(token):
-    api_headers['Authorization'] = 'Bearer ' + token;
+def refresh_api_token():
+    global api_token;
+
+    res = requests.get(API_URL + '/refresh_token', headers=api_headers);
+    api_token = json.loads(res.text).get('token');
+
+    if(res.status_code == 200):
+        api_headers['Authorization'] = 'Bearer ' + api_token;
+    else:
+        raise HTTPException('Error, response code: {}'.format(res.status_code));
 
 # TODO: handle error instances (no results, multiple results)
 def get_episode_name(info):
