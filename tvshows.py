@@ -9,7 +9,7 @@ from http.client import HTTPException
 
 API_URL = 'https://api.thetvdb.com';
 
-api_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzA4MTYwMTksImlkIjoidHYtZG93bmxvYWRlciIsIm9yaWdfaWF0IjoxNDcwNzI5NjE5LCJ1c2VyaWQiOjQ2MjU5MSwidXNlcm5hbWUiOiJkaW5nYXJpIn0.3JSuzkrut8ayMj2gmgd05kf-OwJmwMi_S1ydhWEYdZ9s7yrcKon-iBvhYjCMx3EOwU5BRfQovSBLy-W5pFUmyXRh4R_y-cLcha-UwJRgg-OHYLquYaN98Em1kYiRz6Yq8__80oo-XNYhEYREcbIy2M76zIoNxmPBwionuFy5romhGVh0WNtbOwQtu-n2bcAQ2qePTYf0saI9h7cYwEN3yPVE40W-jBe1b36xPvuW0hjDU-w1dIpQtiUa4iFJ5SIY3PH3MerffcDeGJSBCKWy_4bwqUxscmAR54yt010kmOYHND9nZKPt7s39ba7oUNyBX-UX1kfQNf2fwnmcj45WnA';
+api_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzIzMzExMDEsImlkIjoidHYtZG93bmxvYWRlciIsIm9yaWdfaWF0IjoxNDcyMjQ0NzAxLCJ1c2VyaWQiOjQ2MjU5MSwidXNlcm5hbWUiOiJkaW5nYXJpIn0.dd1KRQZ8CQhtGEIAxRIGvIEbgB8zmw0SMhypCdDULJlMlyzf6cwMO6neB0-Ygw1GEpB4rft9rkNsQpxuCzO7M3WIm_5ifoiXr_1fin28O6MzQHKMYF2araCLQZsQ--AduzK59YohqG-u8P9iWQL2YFpgAt3WKLbRjCj1tdYWmYQ86y3_V5Doi4FXj6S2eQBUvHeTPNNk74XQ_BYMAKL6B8kA2HwaZ7ObctlCw3UiNENHW3HmmPXmpZvOOmQzWTWXlaaTJ1fSlxJa1EMgLqmQ5n6jsf_jneJpccxEcxR2n4y7IducqTdJ8laHBvRpkN4OI7KfLk6j8FJ_a5-zLNS7Uw';
 
 api_headers = {
     'Content-Type': 'application/json',
@@ -154,7 +154,9 @@ def get_episode_name(info):
 
     json_data = json.loads(res.text).get('data');
 
-    index_matches = (i for i, d in enumerate(json_data) if json_data[i].get('seriesName').lower() == info['name'].lower());
+    # This is ridiculous, make a loop instead?
+    index_matches = (i for i, data in enumerate(json_data) if data.get('seriesName').lower() == info['name'].lower() or next(alias for j, alias in enumerate(data.get('aliases')) if alias.lower() == info['name'].lower()));
+
     series_id = json_data[next(index_matches)].get('id');
 
     # Use series id to get the episode name
@@ -165,7 +167,12 @@ def get_episode_name(info):
     req_url = API_URL + '/series/' + str(series_id) + '/episodes/query?' + query_string;
     res = requests.get(req_url, headers=api_headers);
 
+    json_error = json.loads(res.text).get('error');
     json_data = json.loads(res.text).get('data');
+
+    if(json_error):
+        raise Exception(json_error);
+        
     episode_name = json_data[0].get('episodeName');
 
     return episode_name;

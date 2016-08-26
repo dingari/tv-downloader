@@ -66,6 +66,8 @@ def init():
         quality = config[section].get('quality');
         filters.append(tvshows.make_filter(name, quality=quality));
 
+    tvshows.refresh_api_token();
+
 def init_download(url):
     print('Downloading from:', url);
     Popen([client_path, '/DIRECTORY', download_folder, url]);
@@ -89,21 +91,29 @@ def batch_extract():
         season_str = 'Season ' + str(int(info['season']));
 
         if(tvshows.is_extracted(extract_folder, info)):
-            print(info['name'], 'Season', info['season'], 'Episode', info['episode'], 'already exists, skipping');
+            # print(info['name'], 'Season', info['season'], 'Episode', info['episode'], 'already exists, skipping');
             continue;
+
+        try:
+            episode_name = tvshows.get_episode_name(info);
+        except Exception as e:
+            print('Error getting name for:', info);
 
         src = os.path.join(download_folder, f);
         dest = os.path.join(extract_folder, name, season_str);
 
+        # Format filename properly, like: "Foobar - 603 - Foo Bar Baz Foo"
+        dest_filename = '{} - {}{:02d} - {}'.format(name, info['season'], info['episode'], episode_name);
+
         # If we find a single file, copy it
         if(os.path.isfile(src)):
-            copy_file(src, dest);      
+            copy_file(src, dest, dest_filename);      
             continue;
         else:
             # Look for .rar files and try to extract
             try:
-                extract_file(src, dest);
-            except:
+                extract_file(src, dest, dest_filename);
+            except Exception as e:
                 # If extraction fails, look for a single file within the directory
                 # and copy it, if one is found
                 local_files = os.listdir(src);
@@ -115,20 +125,26 @@ def batch_extract():
                 except:
                     print('An error occured while processing {}, skipping'.format(src));
 
-# source: Full path to file
-# dest: Path to destination directory
-def copy_file(source, dest):
+# source:               Full path to file
+# dest:                 Path to destination directory
+# (opt) new_filename:   Optional new filename for extracted file
+def copy_file(source, dest, new_filename=None):
     #TODO: display progress
     print('Copying {} to {}'.format(source, dest));
 
     if(not os.path.exists(dest)):
         os.makedirs(dest);
 
+    if(new_filename):
+        new_filename = '{}.{}'.format(new_filename, re.search('.*\.(.*)$', source).groups()[0]);
+        dest = os.path.join(dest, new_filename);
+
     shutil.copy(source, dest);
 
-# source: Path to directory containing archives
-# dest: Path to destination directory
-def extract_file(source, dest):
+# source:               Path to directory containing archives
+# dest:                 Path to destination directory
+# (opt) new_filename:   Optional new filename for extracted file
+def extract_file(source, dest, new_filename=None):
     files = os.listdir(source);
 
     rarfiles = (f for f in files if re.match('.*\.rar', f));
@@ -136,10 +152,15 @@ def extract_file(source, dest):
 
     rf = rarfile.RarFile(filepath);
 
-    the_file = rf.namelist().pop();
+    the_file = filename = rf.namelist().pop();
 
-    print('Extracting', the_file, 'to', os.path.join(dest, the_file))
-    rf.extract(the_file, dest);
+    if(new_filename):
+        the_file = '{}.{}'.format(new_filename, re.search('.*\.(.*)$', the_file).groups()[0]);
+    else:
+        the_file = filename;
+
+    print('Extracting', filename, 'to', os.path.join(dest, the_file))
+    rf.extract(filename, dest);
 
 def filter_data(entries, filters):
     result = [];
