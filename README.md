@@ -9,5 +9,5 @@ I don't know why µTorrent has been failing to download shows, wheter it lies in
 ### TODOS:
 * Email/Slack notifications upon starting/completing a download.
 * Track downloads (see issue #2 for more details)
-* Rename destination files in proper format and add episode title
+* ~~Rename destination files in proper format and add episode title~~
 * GUI (eventually)
