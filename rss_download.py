@@ -5,6 +5,7 @@ import os
 import rarfile
 import re
 import shutil
+import sys
 import time
 import tvshows
 
@@ -28,10 +29,6 @@ filters = [];
 RSS_INTERVAL = 1 * 60 * 60;
 SCRAPE_INTERVAL = 6 * 60 * 60;
 EXTRACT_INTERVAL = 1 * 60 * 60;
-
-last_rss_update = 0;
-last_scrape = 0;
-last_batch_extract = 0;
 
 def init():
     print('init')
@@ -167,7 +164,7 @@ def extract_file(source, dest, new_filename=None):
     print('Extracting', filename, 'to', os.path.join(dest, the_file))
     rf.extract(filename, dest);
 
-
+# filepath: Full path to file
 def get_subtitles(filepath):
     print('Getting subtitles for', filepath);
     dl_link = tvshows.get_subtitle_link(filepath);
@@ -207,9 +204,11 @@ def filter_data(entries, filters):
 
     return result;
 
-if __name__ == '__main__':
-    init();
-
+def loop_forever():
+    last_rss_update = 0;
+    last_scrape = 0;
+    last_batch_extract = 0;
+    
     while(True):
         print("looping");
         now = time.time();
@@ -235,3 +234,12 @@ if __name__ == '__main__':
         sleep_interval = min(RSS_INTERVAL, SCRAPE_INTERVAL, EXTRACT_INTERVAL);
         print('Sleeping for', sleep_interval, 'seconds');
         time.sleep(sleep_interval); 
+
+if __name__ == '__main__':
+    init();
+
+    if(len(sys.argv) == 1):
+        loop_forever();
+    elif(sys.argv[1] == '--download-sub'):
+        get_subtitles(sys.argv[2]);
+    
