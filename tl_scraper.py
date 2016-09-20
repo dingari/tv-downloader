@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 
 config = configparser.ConfigParser();
 config.read_file(codecs.open('config.ini', 'r', 'utf8'));
-username = config['Credentials'].get('username');
-password = config['Credentials'].get('password');
+username = config['TL_Credentials'].get('username');
+password = config['TL_Credentials'].get('password');
 
 host = 'https://torrentleech.org';
 login_url = host + '/user/account/login';
