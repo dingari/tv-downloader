@@ -1,4 +1,4 @@
-import codecs, configparser json, math, os, struct
+import codecs, configparser, json, math, os, struct
 
 from xmlrpc.client import ServerProxy
 
@@ -44,7 +44,7 @@ def get_subtitle_link(filepath):
     fhash = compute_hash(filepath);
 
     proxy = ServerProxy(API_URL, allow_none=True);
-    res = proxy.LogIn(username, password, useragent);
+    res = proxy.LogIn(username, password, 'en', useragent);
     assert res.get('status') == '200 OK';
     api_token = res.get('token');
 
@@ -52,7 +52,7 @@ def get_subtitle_link(filepath):
             {
                 'sublanguageid': 'en',
                 'moviehash': fhash,
-                'moviebytesize': fsize
+                'moviebytesize': str(fsize)
             }
         ]);
 
@@ -63,7 +63,7 @@ def get_subtitle_link(filepath):
     data = list(filter(lambda x: x.get('ISO639') == 'en', data));
 
     # Sort the list in descending order by number of downloads
-    data = sorted(filtered_data, key=lambda k: int(k.get('SubDownloadsCnt', 0)), reverse=True);
+    data = sorted(data, key=lambda k: int(k.get('SubDownloadsCnt', 0)), reverse=True);
 
     download_link = data.pop().get('ZipDownloadLink');
 

@@ -10,6 +10,8 @@ import tvshows
 
 from subprocess import Popen
 from tl_scraper import scrape_torrents
+from urllib.request import urlretrieve
+from zipfile import ZipFile
 
 # Globals
 feed_url = '';
@@ -107,12 +109,14 @@ def batch_extract():
 
         # If we find a single file, copy it
         if(os.path.isfile(src)):
-            copy_file(src, dest, dest_filename);      
+            copy_file(src, dest, dest_filename);
+            get_subtitles(os.path.join(dest, dest_filename));     
             continue;
         else:
             # Look for .rar files and try to extract
             try:
                 extract_file(src, dest, dest_filename);
+                get_subtitles(os.path.join(dest, dest_filename)); 
             except Exception as e:
                 # If extraction fails, look for a single file within the directory
                 # and copy it, if one is found
@@ -122,6 +126,7 @@ def batch_extract():
                 try:
                     filename = next(matched_files);
                     copy_file(os.path.join(src, filename), dest);
+                    get_subtitles(os.path.join(dest, filename)); 
                 except:
                     print('An error occured while processing {}, skipping'.format(src));
 
@@ -161,6 +166,29 @@ def extract_file(source, dest, new_filename=None):
 
     print('Extracting', filename, 'to', os.path.join(dest, the_file))
     rf.extract(filename, dest);
+
+
+def get_subtitles(filepath):
+    print('Getting subtitles for', filepath);
+    dl_link = tvshows.get_subtitle_link(filepath);
+    dl_file_path, headers = urlretrieve(dl_link);
+
+    # Destination folder, episode filename
+    dest, filename = os.path.split(filepath);
+
+    with ZipFile(dl_file_path, 'r') as zf:
+        subfiles = (f for f in zf.namelist() if re.match('.*\.srt', f));
+        subfile_name = next(subfiles);
+        subfile_path = zf.extract(subfile_name, dest);
+
+        # Destination filename without extension
+        (name, ) = re.search('(.*)\..*', filename).groups();
+
+        # Only working with srt as of now, may need to think about
+        # other formats as well
+        new_subfile_path = os.path.join(dest, filename + '.srt');
+        os.rename(subfile_path, new_subfile_path);
+
 
 def filter_data(entries, filters):
     result = [];
@@ -207,4 +235,3 @@ if __name__ == '__main__':
         sleep_interval = min(RSS_INTERVAL, SCRAPE_INTERVAL, EXTRACT_INTERVAL);
         print('Sleeping for', sleep_interval, 'seconds');
         time.sleep(sleep_interval); 
-
