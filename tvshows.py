@@ -1,21 +1,9 @@
-import json
 import math
 import os
 import re
-import requests
-import urllib.parse as urlparse
 
-from http.client import HTTPException
+from tvdb_api import refresh_api_token, get_episode_name
 
-API_URL = 'https://api.thetvdb.com';
-
-api_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzIzMzExMDEsImlkIjoidHYtZG93bmxvYWRlciIsIm9yaWdfaWF0IjoxNDcyMjQ0NzAxLCJ1c2VyaWQiOjQ2MjU5MSwidXNlcm5hbWUiOiJkaW5nYXJpIn0.dd1KRQZ8CQhtGEIAxRIGvIEbgB8zmw0SMhypCdDULJlMlyzf6cwMO6neB0-Ygw1GEpB4rft9rkNsQpxuCzO7M3WIm_5ifoiXr_1fin28O6MzQHKMYF2araCLQZsQ--AduzK59YohqG-u8P9iWQL2YFpgAt3WKLbRjCj1tdYWmYQ86y3_V5Doi4FXj6S2eQBUvHeTPNNk74XQ_BYMAKL6B8kA2HwaZ7ObctlCw3UiNENHW3HmmPXmpZvOOmQzWTWXlaaTJ1fSlxJa1EMgLqmQ5n6jsf_jneJpccxEcxR2n4y7IducqTdJ8laHBvRpkN4OI7KfLk6j8FJ_a5-zLNS7Uw';
-
-api_headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Authorization': 'Bearer ' + api_token
-};
 
 def make_filter(name, season=None, episode=None, quality=None):
     if(name is None):
@@ -133,46 +121,3 @@ def is_contained(matched_list, info):
             return True;
 
     return False;
-
-def refresh_api_token():
-    global api_token;
-
-    res = requests.get(API_URL + '/refresh_token', headers=api_headers);
-    api_token = json.loads(res.text).get('token');
-
-    if(res.status_code == 200):
-        api_headers['Authorization'] = 'Bearer ' + api_token;
-    else:
-        raise HTTPException('Error, response code: {}'.format(res.status_code));
-
-# TODO: handle error instances (no results, multiple results)
-def get_episode_name(info):
-    # Get series id
-    query_string = urlparse.urlencode({'name': info['name']});
-    req_url = API_URL + '/search/series?' + query_string;
-    res = requests.get(req_url, headers=api_headers);
-
-    json_data = json.loads(res.text).get('data');
-
-    # This is ridiculous, make a loop instead?
-    index_matches = (i for i, data in enumerate(json_data) if data.get('seriesName').lower() == info['name'].lower() or next(alias for j, alias in enumerate(data.get('aliases')) if alias.lower() == info['name'].lower()));
-
-    series_id = json_data[next(index_matches)].get('id');
-
-    # Use series id to get the episode name
-    query_string = urlparse.urlencode({
-        'airedSeason': info.get('season'),
-        'airedEpisode': info.get('episode')
-        });
-    req_url = API_URL + '/series/' + str(series_id) + '/episodes/query?' + query_string;
-    res = requests.get(req_url, headers=api_headers);
-
-    json_error = json.loads(res.text).get('error');
-    json_data = json.loads(res.text).get('data');
-
-    if(json_error):
-        raise Exception(json_error);
-        
-    episode_name = json_data[0].get('episodeName');
-
-    return episode_name;
