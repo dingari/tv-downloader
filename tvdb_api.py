@@ -1,8 +1,14 @@
-import json, requests
+import codecs, configparser, json, requests
 
 import urllib.parse as urlparse
 
 from http.client import HTTPException
+
+config = configparser.ConfigParser();
+config.read_file(codecs.open('config.ini', 'r', 'utf8'));
+username = config['TVDB_Credentials'].get('username');
+userkey = config['TVDB_Credentials'].get('userkey');
+apikey = config['TVDB_Credentials'].get('apikey');
 
 API_URL = 'https://api.thetvdb.com';
 
@@ -10,8 +16,24 @@ api_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzQ0OTY2NDMsImlkIj
 api_headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'Authorization': 'Bearer ' + api_token
 };
+
+def login():
+    global api_token;
+
+    payload = {
+        'apikey': apikey,
+        'username': username,
+        'userkey': userkey
+        };
+
+    res = requests.post(API_URL + '/login', json=payload, headers=api_headers);
+    api_token = json.loads(res.text).get('token');
+
+    if(res.status_code == 200):
+        api_headers['Authorization'] = 'Bearer ' + api_token;
+    else:
+        raise HTTPException('Error, response code: {}'.format(res.status_code));
 
 def refresh_api_token():
     global api_token;
@@ -26,6 +48,11 @@ def refresh_api_token():
 
 # TODO: handle error instances (no results, multiple results)
 def get_episode_name(info):
+    try:
+        refresh_api_token();
+    except HTTPException:
+        login();
+
     # Get series id
     query_string = urlparse.urlencode({'name': info['name']});
     req_url = API_URL + '/search/series?' + query_string;

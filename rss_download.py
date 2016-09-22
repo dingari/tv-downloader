@@ -65,8 +65,6 @@ def init():
         quality = config[section].get('quality');
         filters.append(tvshows.make_filter(name, quality=quality));
 
-    tvshows.refresh_api_token();
-
 def init_download(url):
     print('Downloading from:', url);
     Popen([client_path, '/DIRECTORY', download_folder, url]);
