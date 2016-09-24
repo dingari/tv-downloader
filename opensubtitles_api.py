@@ -45,7 +45,10 @@ def get_subtitle_link(filepath):
 
     proxy = ServerProxy(API_URL, allow_none=True);
     res = proxy.LogIn(username, password, 'en', useragent);
-    assert res.get('status') == '200 OK';
+    
+    if(res.get('status') == 200):
+        raise HTTPException('OS API login failed: {}'.format(res.text));
+
     api_token = res.get('token');
 
     res = proxy.SearchSubtitles(api_token, [

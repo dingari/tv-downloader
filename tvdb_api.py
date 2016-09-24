@@ -33,7 +33,7 @@ def login():
     if(res.status_code == 200):
         api_headers['Authorization'] = 'Bearer ' + api_token;
     else:
-        raise HTTPException('Error, response code: {}'.format(res.status_code));
+        raise HTTPException('TVDB API login failed: {}'.format(res.text));
 
 def refresh_api_token():
     global api_token;
@@ -44,7 +44,7 @@ def refresh_api_token():
     if(res.status_code == 200):
         api_headers['Authorization'] = 'Bearer ' + api_token;
     else:
-        raise HTTPException('Error, response code: {}'.format(res.status_code));
+        raise HTTPException('Can\' refresh TVDB API token: {}'.format(res.text));
 
 # TODO: handle error instances (no results, multiple results)
 def get_episode_name(info):

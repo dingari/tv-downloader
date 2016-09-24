@@ -94,7 +94,7 @@ def batch_extract():
         try:
             episode_name = tvshows.get_episode_name(info);
         except Exception as e:
-            print('Error getting name for:', info);
+            print('Error getting name for: {}, reason: {}'.format(info, e));
 
         src = os.path.join(download_folder, f);
         dest = os.path.join(extract_folder, name, season_str);
@@ -105,14 +105,13 @@ def batch_extract():
         # If we find a single file, copy it
         if(os.path.isfile(src)):
             copy_file(src, dest, dest_filename);
-            get_subtitles(os.path.join(dest, dest_filename));     
-            continue;
         else:
-            # Look for .rar files and try to extract
+            # It's a directory
+            # Look for .rar files there within and try to extract
             try:
-                extract_file(src, dest, dest_filename);
-                get_subtitles(os.path.join(dest, dest_filename)); 
-            except Exception as e:
+                extract_file(src, dest, dest_filename);            
+            except rarfile.Error as re:
+                print('Error extracting: {}'.format(re));
                 # If extraction fails, look for a single file within the directory
                 # and copy it, if one is found
                 local_files = os.listdir(src);
@@ -123,7 +122,17 @@ def batch_extract():
                     copy_file(os.path.join(src, filename), dest);
                     get_subtitles(os.path.join(dest, filename)); 
                 except:
-                    print('An error occured while processing {}, skipping'.format(src));
+                    # We're out of luck with this one
+                    print('An unknown error occured while processing {}, skipping...'.format(src));
+                    continue;
+
+        # At last get subtitles for the downloaded episode
+        # TODO: maybe leave this as a configurable option?
+        try:   
+            get_subtitles(os.path.join(dest, dest_filename));
+        except FileNotFoundError as fe:
+            print('{}'.format(fe));
+
 
 # source:               Full path to file
 # dest:                 Path to destination directory
@@ -155,34 +164,53 @@ def extract_file(source, dest, new_filename=None):
     the_file = filename = rf.namelist().pop();
 
     if(new_filename):
-        the_file = '{}.{}'.format(new_filename, re.search('.*\.(.*)$', the_file).groups()[0]);
+        (ext, ) = re.search('.*\.(.*)$', the_file).groups();
+        the_file = '{}.{}'.format(new_filename, ext);
     else:
         the_file = filename;
 
     print('Extracting', filename, 'to', os.path.join(dest, the_file))
     rf.extract(filename, dest);
 
-# filepath: Full path to file
-def get_subtitles(filepath):
-    print('Getting subtitles for', filepath);
-    dl_link = tvshows.get_subtitle_link(filepath);
-    dl_file_path, headers = urlretrieve(dl_link);
+    old_path = os.path.join(dest, filename);
+    new_path = os.path.join(dest, the_file);
+    os.rename(old_path, new_path);
 
+# filepath: Full path to file w/o extension
+#
+# Throws: FileNotFoundError if filepath does not yield
+#         a file during a scan for extensions
+def get_subtitles(filepath):
     # Destination folder, episode filename
     dest, filename = os.path.split(filepath);
 
-    with ZipFile(dl_file_path, 'r') as zf:
-        subfiles = (f for f in zf.namelist() if re.match('.*\.srt', f));
-        subfile_name = next(subfiles);
-        subfile_path = zf.extract(subfile_name, dest);
+    try:
+        localfiles = os.listdir(dest);
+        matched_files = (f for f in localfiles if re.match(filename + '\..*', f));
+        (ext, ) = re.search('.*\.(.*)$', next(matched_files)).groups();
+        filepath = os.path.join(dest, '{}.{}'.format(filename, ext));
+    except StopIteration:
+        raise FileNotFoundError('Can\'t get subtitles for non-existent file \'{}\''.format(filepath));
 
-        # Destination filename without extension
-        (name, ) = re.search('(.*)\..*', filename).groups();
+    try:
+        print('Getting subtitles for', filepath);
+        dl_link = tvshows.get_subtitle_link(filepath);
+        dl_file_path, headers = urlretrieve(dl_link);
 
-        # Only working with srt as of now, may need to think about
-        # other formats as well
-        new_subfile_path = os.path.join(dest, filename + '.srt');
-        os.rename(subfile_path, new_subfile_path);
+        with ZipFile(dl_file_path, 'r') as zf:
+            subfiles = (f for f in zf.namelist() if re.match('.*\.srt', f));
+            subfile_name = next(subfiles);
+            subfile_path = zf.extract(subfile_name, dest);
+
+            # Destination filename without extension
+            # (name, ) = re.search('(.*)\..*', filename).groups();
+
+            # Only working with srt as of now, may need to think about
+            # other formats as well
+            new_subfile_path = os.path.join(dest, filename + '.srt');
+            os.rename(subfile_path, new_subfile_path);
+    except StopIteration:
+        FileNotFoundError('No subtitle file found in downloaded archive');
 
 
 def filter_data(entries, filters):
