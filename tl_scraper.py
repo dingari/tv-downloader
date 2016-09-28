@@ -1,6 +1,7 @@
 import codecs
 import configparser
 import json
+import os
 import re
 import requests
 
@@ -30,6 +31,18 @@ def login(username=username, password=password, login_url=login_url):
 	session.get(host);
 	session.post(login_url, data = data);
 	return session;
+
+def get_torrent_with_login(url):
+	(torrent_name, ) = re.search('.*/(.*).torrent$', url).groups();
+	tmp_path = os.path.join(os.environ['TMP'], '{}.torrent'.format(torrent_name));
+
+	session = login();
+	res = session.get(url);
+
+	with open(tmp_path, 'wb') as torrentfile:
+		torrentfile.write(res.content);
+
+	return tmp_path;
 
 def scrape_torrents(session=login(), max_pages=10):
 	page = 1;

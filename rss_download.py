@@ -10,7 +10,7 @@ import time
 import tvshows
 
 from subprocess import Popen
-from tl_scraper import scrape_torrents
+from tl_scraper import get_torrent_with_login, scrape_torrents
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -67,7 +67,10 @@ def init():
 
 def init_download(url):
     print('Downloading from:', url);
-    Popen([client_path, '/DIRECTORY', download_folder, url]);
+
+    path = url if re.match('.*/rss/.*', url) else get_torrent_with_login(url);
+
+    Popen([client_path, '/DIRECTORY', download_folder, path]);
 
 def batch_download(matched_list):
     for entry in matched_list:
@@ -91,16 +94,17 @@ def batch_extract():
             # print(info['name'], 'Season', info['season'], 'Episode', info['episode'], 'already exists, skipping');
             continue;
 
+        dest_filename = None;
         try:
             episode_name = tvshows.get_episode_name(info);
+
+            # Format filename properly, like: "Foobar - 603 - Foo Bar Baz Foo"
+            dest_filename = '{} - {}{:02d} - {}'.format(name, info['season'], info['episode'], episode_name);
         except Exception as e:
             print('Error getting name for: {}, reason: {}'.format(info, e));
 
         src = os.path.join(download_folder, f);
         dest = os.path.join(extract_folder, name, season_str);
-
-        # Format filename properly, like: "Foobar - 603 - Foo Bar Baz Foo"
-        dest_filename = '{} - {}{:02d} - {}'.format(name, info['season'], info['episode'], episode_name);
 
         # If we find a single file, copy it
         if(os.path.isfile(src)):
