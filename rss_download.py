@@ -71,8 +71,8 @@ def init_download(url):
 
 def batch_download(matched_list):
     for entry in matched_list:
-        if(not is_downloaded(entry)):
-            init_download(url);
+        if(not tvshows.is_downloaded(download_folder, entry)):
+            init_download(entry.get('link'));
 
 def batch_extract():
     files = os.listdir(download_folder);
