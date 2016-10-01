@@ -21,6 +21,9 @@ browse_url = host + '/torrents/browse/index/facets/category%253ATV';
 # Variable representing the FIRST torrent id encountered during last scrape,
 last_seen_id = None;
 
+# Maximum pages to scrape if last_seen_id is not hit during scrape
+MAX_PAGES = 50;
+
 def login(username=username, password=password, login_url=login_url):
 	data = {
 		'username': username,
@@ -44,7 +47,7 @@ def get_torrent_with_login(url):
 
 	return tmp_path;
 
-def scrape_torrents(session=login(), max_pages=10):
+def scrape_torrents(session=login(), max_pages=MAX_PAGES):
 	page = 1;
 	results = [];
 	current_id = 0;

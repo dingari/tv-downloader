@@ -26,9 +26,9 @@ extensions = '';
 matches = [];
 filters = [];
 
-RSS_INTERVAL = 1 * 60 * 60;
-SCRAPE_INTERVAL = 6 * 60 * 60;
-EXTRACT_INTERVAL = 1 * 60 * 60;
+RSS_INTERVAL = 15 * 60;
+SCRAPE_INTERVAL = 15 * 60;
+EXTRACT_INTERVAL = 15 * 60;
 
 def init():
     print('init')
@@ -215,6 +215,8 @@ def get_subtitles(filepath):
             os.rename(subfile_path, new_subfile_path);
     except StopIteration:
         FileNotFoundError('No subtitle file found in downloaded archive');
+    except IndexError:
+        FileNotFoundError('No subtitles found');
 
 
 def filter_data(entries, filters):
@@ -250,7 +252,9 @@ def loop_forever():
 
         if(now - last_scrape > SCRAPE_INTERVAL):
             print('Scraping...');
-            data.entries.extend(scrape_torrents());
+            scraped_torrents = scrape_torrents(max_pages=10);
+            print('Found {} torrents since last scrape'.format(len(scraped_torrents)));
+            data.entries.extend(scraped_torrents);
             last_scrape = time.time();
 
         matches = filter_data(data.entries, filters);
