@@ -33,7 +33,7 @@ class TorrentDownloader:
         rartool_path = config['Extract'].get('tool_path');
         self.dest_basefolder = config['Extract'].get('extract_destination');
         self.extensions = config['Extract'].get('extensions');
-        file_utils = FileUtils(rartool_path);
+        fileutils = FileUtils(rartool_path);
 
         # TVDB-related config
         tvdb_username = config['TVDB_Credentials'].get('username');
@@ -69,7 +69,7 @@ class TorrentDownloader:
     def batch_download(self, torrentlist):
         for entry in torrentlist:
             if(not TvShowUtils.is_downloaded(self.download_folder, entry)):
-                init_download(entry.get('link'));
+                self.init_download(entry.get('link'));
 
     def batch_extract(self):
         files = os.listdir(self.download_folder);
@@ -102,12 +102,12 @@ class TorrentDownloader:
 
             # If we find a single file, copy it
             if(os.path.isfile(src)):
-                copy_file(src, dest, dest_filename);
+                fileutils.copy_file(src, dest, dest_filename);
             else:
                 # It's a directory
                 # Look for .rar files there within and try to extract
                 try:
-                    extract_file(src, dest, dest_filename);            
+                    fileutils.extract_file(src, dest, dest_filename);            
                 except rarfile.Error as re:
                     print('Error extracting: {}'.format(re));
                     # If extraction fails, look for a single file within the directory
@@ -117,8 +117,8 @@ class TorrentDownloader:
 
                     try:
                         filename = next(matched_files);
-                        copy_file(os.path.join(src, filename), dest);
-                        get_subtitles(os.path.join(dest, filename)); 
+                        fileutils.copy_file(os.path.join(src, filename), dest);
+                        self.get_subtitles(os.path.join(dest, filename)); 
                     except:
                         # We're out of luck with this one
                         print('An unknown error occured while processing {}, skipping...'.format(src));
@@ -127,7 +127,7 @@ class TorrentDownloader:
             # At last get subtitles for the downloaded episode
             # TODO: maybe leave this as a configurable option?
             try:   
-                get_subtitles(os.path.join(dest, dest_filename));
+                self.get_subtitles(os.path.join(dest, dest_filename));
             except FileNotFoundError as fe:
                 print('{}'.format(fe));
 
