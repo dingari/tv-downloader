@@ -10,7 +10,7 @@ import time
 import tvshows
 
 from subprocess import Popen
-from tl_scraper import get_torrent_with_login, scrape_torrents
+from tl_scraper import TlClient
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -54,6 +54,12 @@ def init():
     extensions = config['Extract'].get('extensions');
     rarfile.UNRAR_TOOL = extract_tool_path;
 
+    tl_username = config['TL_Credentials'].get('username');
+    tl_password = config['TL_Credentials'].get('password');
+
+    global tl_client;
+    tl_client = TlClient(tl_username, tl_password);
+
     # Read filter config file
     config = configparser.ConfigParser(); # unneccessary?
     config.read_file(codecs.open('filters.ini', 'r', 'utf8'));
@@ -68,7 +74,7 @@ def init():
 def init_download(url):
     print('Downloading from:', url);
 
-    path = url if re.match('.*/rss/.*', url) else get_torrent_with_login(url);
+    path = url if re.match('.*/rss/.*', url) else tl_client.get_torrent(url);
 
     Popen([client_path, '/DIRECTORY', download_folder, path]);
 
@@ -252,7 +258,7 @@ def loop_forever():
 
         if(now - last_scrape > SCRAPE_INTERVAL):
             print('Scraping...');
-            scraped_torrents = scrape_torrents(max_pages=10);
+            scraped_torrents = tl_client.scrape_torrents(max_pages=10);
             print('Found {} torrents since last scrape'.format(len(scraped_torrents)));
             data.entries.extend(scraped_torrents);
             last_scrape = time.time();
