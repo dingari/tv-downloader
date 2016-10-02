@@ -7,12 +7,12 @@ import re
 import shutil
 import sys
 import time
-import tvshows
 
 from opensubtitles_api import OpenSubtitlesClient
 from subprocess import Popen
 from tl_scraper import TlClient
 from tvdb_api import TvdbClient
+from tvshows import TvShowUtils
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -85,7 +85,7 @@ def init():
         filt = [];
         name = config[section].get('name');
         quality = config[section].get('quality');
-        filters.append(tvshows.make_filter(name, quality=quality));
+        filters.append(TvShowUtils.make_filter(name, quality=quality));
 
 def init_download(url):
     print('Downloading from:', url);
@@ -96,7 +96,7 @@ def init_download(url):
 
 def batch_download(matched_list):
     for entry in matched_list:
-        if(not tvshows.is_downloaded(download_folder, entry)):
+        if(not TvShowUtils.is_downloaded(download_folder, entry)):
             init_download(entry.get('link'));
 
 def batch_extract():
@@ -104,7 +104,7 @@ def batch_extract():
 
     for f in files:
         try:
-            info = tvshows.get_info(f);
+            info = TvShowUtils.get_info(f);
         except ValueError:
             print('Illegal name: {}, skipping'.format(f));
             continue;
@@ -112,7 +112,7 @@ def batch_extract():
         name = info['name'];        
         season_str = 'Season ' + str(int(info['season']));
 
-        if(tvshows.is_extracted(extract_folder, info)):
+        if(TvShowUtils.is_extracted(extract_folder, info)):
             # print(info['name'], 'Season', info['season'], 'Episode', info['episode'], 'already exists, skipping');
             continue;
 
@@ -249,8 +249,8 @@ def filter_data(entries, filters):
             for filt in filters:
                 if(re.search(filt, entry['title'], re.IGNORECASE) is not None):
                     try:
-                        info = tvshows.get_info(entry['title']);
-                        if(not tvshows.is_contained(result, info)):
+                        info = TvShowUtils.get_info(entry['title']);
+                        if(not TvShowUtils.is_contained(result, info)):
                             info['link'] = entry['link'];
                             result.append(info);
                     except Exception as e:
