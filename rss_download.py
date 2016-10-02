@@ -9,6 +9,7 @@ import sys
 import time
 import tvshows
 
+from opensubtitles_api import OpenSubtitlesClient
 from subprocess import Popen
 from tl_scraper import TlClient
 from tvdb_api import TvdbClient
@@ -61,11 +62,19 @@ def init():
     global tl_client;
     tl_client = TlClient(tl_username, tl_password);
 
-    global tvdb_client;
     tvdb_username = config['TVDB_Credentials'].get('username');
     tvdb_userkey = config['TVDB_Credentials'].get('userkey');
     tvdb_apikey = config['TVDB_Credentials'].get('apikey');
+
+    global tvdb_client;
     tvdb_client = TvdbClient(tvdb_username, tvdb_userkey, tvdb_apikey);
+
+    os_username = config['OS_Credentials'].get('username');
+    os_password = config['OS_Credentials'].get('password');
+    os_useragent = config['OS_Credentials'].get('useragent');
+
+    global os_client;
+    os_client = OpenSubtitlesClient(os_username, os_password, os_useragent);
 
     # Read filter config file
     config = configparser.ConfigParser(); # unneccessary?
@@ -211,7 +220,7 @@ def get_subtitles(filepath):
 
     try:
         print('Getting subtitles for', filepath);
-        dl_link = tvshows.get_subtitle_link(filepath);
+        dl_link = os_client.get_subtitle_link(filepath);
         dl_file_path, headers = urlretrieve(dl_link);
 
         with ZipFile(dl_file_path, 'r') as zf:

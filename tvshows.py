@@ -2,8 +2,6 @@ import math
 import os
 import re
 
-from opensubtitles_api import get_subtitle_link
-
 
 def make_filter(name, season=None, episode=None, quality=None):
     if(name is None):

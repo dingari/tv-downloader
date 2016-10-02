@@ -1,73 +1,80 @@
-import codecs, configparser, json, math, os, struct
+import json, math, os, struct
 
 from xmlrpc.client import ServerProxy
 
-API_URL = 'http://api.opensubtitles.org/xml-rpc';
+class OpenSubtitlesClient:
 
-config = configparser.ConfigParser();
-config.read_file(codecs.open('config.ini', 'r', 'utf8'));
-username = config['OS_Credentials'].get('username');
-password = config['OS_Credentials'].get('password');
-useragent = config['OS_Credentials'].get('useragent');
+    api_url = 'http://api.opensubtitles.org/xml-rpc';
+    lang_ISO639 = 'en';
 
-def compute_hash(filepath):
-    SEEK_SET = 0;
-    SEEK_CUR = 1;
-    SEEK_END = 2;
+    def __init__(self, username=None, password=None, useragent=None):
+        self.username = username;
+        self.password = password;
+        self.useragent = useragent;
 
-    fh = open(filepath, 'rb');
-    fsize = os.path.getsize(filepath);
+    def get_subtitle_link(self, filepath):
+        fsize = os.path.getsize(filepath);
+        fhash = self.compute_hash(filepath);
 
-    fhash = fsize;
+        proxy = ServerProxy(self.api_url, allow_none=True);
+        res = proxy.LogIn(
+            self.username, 
+            self.password, 
+            self.lang_ISO639, 
+            self.useragent
+        );
+        
+        if(res.get('status') == 200):
+            raise HTTPException('OS API login failed: {}'.format(res.text));
 
-    bytesize = struct.calcsize('<q');
-    bytemax = int(65536 / bytesize);
+        self.api_token = res.get('token');
 
-    for i in range(bytemax):
-        tmp = fh.read(bytesize);
-        (val,) = struct.unpack('<q', tmp);
-        fhash += val;
-        fhash &= 0xffffffffffffffff
+        res = proxy.SearchSubtitles(self.api_token, [
+                {
+                    'sublanguageid': self.lang_ISO639,
+                    'moviehash': fhash,
+                    'moviebytesize': str(fsize)
+                }
+            ]);
 
-    fh.seek(max(0, fsize - 65536), SEEK_SET);
+        # Make sure only english subtitles show up
+        # It's strange, but specifying language in the query sometimes
+        # yields non-english results
+        data = res.get('data');
+        data = list(filter(lambda x: x.get('ISO639') == self.lang_ISO639, data));
 
-    for i in range(bytemax):
-        tmp = fh.read(bytesize);
-        (val,) = struct.unpack('<q', tmp);
-        fhash += val;
-        fhash &= 0xffffffffffffffff
+        # Sort the list in descending order by number of downloads
+        data = sorted(data, key=lambda k: int(k.get('SubDownloadsCnt', 0)), reverse=True);
 
-    fh.close();
+        download_link = data.pop().get('ZipDownloadLink');
 
-def get_subtitle_link(filepath):
-    fsize = os.path.getsize(filepath);
-    fhash = compute_hash(filepath);
+        return download_link;
 
-    proxy = ServerProxy(API_URL, allow_none=True);
-    res = proxy.LogIn(username, password, 'en', useragent);
-    
-    if(res.get('status') == 200):
-        raise HTTPException('OS API login failed: {}'.format(res.text));
+    def compute_hash(self, filepath):
+        SEEK_SET = 0;
+        SEEK_CUR = 1;
+        SEEK_END = 2;
 
-    api_token = res.get('token');
+        fh = open(filepath, 'rb');
+        fsize = os.path.getsize(filepath);
 
-    res = proxy.SearchSubtitles(api_token, [
-            {
-                'sublanguageid': 'en',
-                'moviehash': fhash,
-                'moviebytesize': str(fsize)
-            }
-        ]);
+        fhash = fsize;
 
-    # Make sure only english subtitles show up
-    # It's strange, but specifying language in the query sometimes
-    # yields non-english results
-    data = res.get('data');
-    data = list(filter(lambda x: x.get('ISO639') == 'en', data));
+        bytesize = struct.calcsize('<q');
+        bytemax = int(65536 / bytesize);
 
-    # Sort the list in descending order by number of downloads
-    data = sorted(data, key=lambda k: int(k.get('SubDownloadsCnt', 0)), reverse=True);
+        for i in range(bytemax):
+            tmp = fh.read(bytesize);
+            (val,) = struct.unpack('<q', tmp);
+            fhash += val;
+            fhash &= 0xffffffffffffffff
 
-    download_link = data.pop().get('ZipDownloadLink');
+        fh.seek(max(0, fsize - 65536), SEEK_SET);
 
-    return download_link;
+        for i in range(bytemax):
+            tmp = fh.read(bytesize);
+            (val,) = struct.unpack('<q', tmp);
+            fhash += val;
+            fhash &= 0xffffffffffffffff
+
+        fh.close();
