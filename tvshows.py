@@ -59,7 +59,7 @@ def get_info(input_str):
     res_se2 = reg_se2.search(input_str);
 
     if(res_se1 is None and res_se2 is None):
-        raise ValueError('No season/episode info found');
+        raise ValueError('No season/episode info found for \'{}\''.format(input_str));
     elif(res_se2 is None):
         season = int(res_se1.group(1));
         episode = int(res_se1.group(2));
