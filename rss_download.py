@@ -11,6 +11,7 @@ import tvshows
 
 from subprocess import Popen
 from tl_scraper import TlClient
+from tvdb_api import TvdbClient
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -60,6 +61,12 @@ def init():
     global tl_client;
     tl_client = TlClient(tl_username, tl_password);
 
+    global tvdb_client;
+    tvdb_username = config['TVDB_Credentials'].get('username');
+    tvdb_userkey = config['TVDB_Credentials'].get('userkey');
+    tvdb_apikey = config['TVDB_Credentials'].get('apikey');
+    tvdb_client = TvdbClient(tvdb_username, tvdb_userkey, tvdb_apikey);
+
     # Read filter config file
     config = configparser.ConfigParser(); # unneccessary?
     config.read_file(codecs.open('filters.ini', 'r', 'utf8'));
@@ -102,7 +109,7 @@ def batch_extract():
 
         dest_filename = None;
         try:
-            episode_name = tvshows.get_episode_name(info);
+            episode_name = tvdb_client.get_episode_name(info);
 
             # Format filename properly, like: "Foobar - 603 - Foo Bar Baz Foo"
             dest_filename = '{} - {}{:02d} - {}'.format(name, info['season'], info['episode'], episode_name);

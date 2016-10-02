@@ -2,7 +2,6 @@ import math
 import os
 import re
 
-from tvdb_api import refresh_api_token, get_episode_name
 from opensubtitles_api import get_subtitle_link
 
 
